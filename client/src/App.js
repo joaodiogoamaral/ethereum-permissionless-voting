@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 
-import SimpleStorageContract from "./contracts/SimpleStorage.json";
 import Election from "./contracts/Election.json"
 import getWeb3 from "./getWeb3";
 
@@ -17,12 +16,8 @@ class App extends Component {
 
   constructor(props) {
     super(props)
-    this.state = { storageValue: 0, web3: null, accounts: null, contract: null,votes: null  };
+    this.state = { storageValue: 0, web3: null, accounts: null, contract: null,votes: null,hasVoted:false};
 
-    //this.getVotes = this.getVotes.bind(this)
-    
-    
-    
   }
 
 
@@ -33,6 +28,8 @@ class App extends Component {
 
       // Use web3 to get the user's accounts.
       const accounts = await web3.eth.getAccounts();
+
+      
 
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
@@ -49,10 +46,7 @@ class App extends Component {
           console.log("Adding %s:",data[key].name);
           candidates2Add.push(data[key].name);
       });
-      /*for (let x in data.name) {
-        console.log("Adding %s:",data.name);
-        candidates2Add.push(x);
-      }*/
+
 
       const votesArr = Array.from({length: candidates2Add.length}, (v, i) => 0)
 
@@ -61,9 +55,10 @@ class App extends Component {
       
       
       
+      
      // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, contract: instance,votes:votesArr},this.getVotes);
+      this.setState({ web3, accounts, contract: instance,votes:votesArr},this.init);
       
     } catch (error) {
       // Catch any errors for any of the above operations.
@@ -74,83 +69,87 @@ class App extends Component {
     }
   };
 
-  runExample = async () => {
-    const { accounts, contract } = this.state;
+  init = async () => {
+    this.checkClientVoted();
+    this.getVotes();
+  }
 
-    // Stores a given value, 5 by default.
-    //await contract.methods.set(5).send({ from: accounts[0] });
+  renderButton(id) {
 
-    // Get the value from the contract to prove it worked.
-    //const response = await contract.methods.get().call();
-
-    // Update state with the result.
-    //this.setState({ storageValue: response });
-
-    console.log("DUMMY")
-  };
-
-  
+    if(!this.state.hasVoted)
+      return(<Button size='lg' variant="primary" onClick={() => {this.handleVoteClick(id) }}>Vote</Button>);
+    else
+      return(<div></div>);
+  }
 
   render() {
     if (!this.state.web3 || !this.state.contract) {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
 
-  
-    return (
+    
+
+    
+
+    
+      return (
       
-      <div className="App">
-        <Navbar bg="dark" variant="dark"  >
-          <Container>
-            <Navbar.Brand href="#home">
-              <img
-                alt=""
-                src={process.env.PUBLIC_URL + `logo192.png`}
-                width="30"
-                height="30"
-                className="d-inline-block align-top"
-                padding-right="5px"
-              />
-              Choose your favourite family guy character!
-            </Navbar.Brand>
-        </Container>
-      </Navbar>
-      
+        <div className="App">
+          <Navbar bg="dark" variant="dark"  >
+            <Container>
+              <Navbar.Brand href="#home">
+                <img
+                  alt=""
+                  src={process.env.PUBLIC_URL + `logo192.png`}
+                  width="30"
+                  height="30"
+                  className="d-inline-block align-top"
+                  padding-right="5px"
+                />
+                Choose your favourite family guy character!
+              </Navbar.Brand>
+          </Container>
+        </Navbar>
         
-        <Container>
-          <Row style={{width:'100%', padding:'5px'}}>
-            
-            {data.map((index) => {
+          
+          <Container>
+            <Row style={{width:'100%', padding:'5px'}}>
               
-              return (
-                <Col key={index.id}>
-                <Card style={{ width: '18rem', padding:'5px' }} border='primary'>
-                      <Card.Img height='256' width='256' src={process.env.PUBLIC_URL + `${index.name}.png`} />
-                      <Card.Body>
-                        <Card.Title>{index.name}</Card.Title>
-                        <Card.Text>{index.name} currently has {this.state.votes[index.id]} votes.</Card.Text>
-                        <Button size='lg' variant="primary" onClick={() => {this.handleVoteClick(index.id) }}>Vote</Button>
-                      </Card.Body>
-                </Card>
-                </Col>
+              {data.map((index) => {
                 
-              );
-            })}
-          </Row>
-        </Container>
-      </div>
-    );
+                return (
+                  <Col key={index.id}>
+                  <Card style={{ width: '18rem', padding:'5px' }} border='primary'>
+                        <Card.Img height='256' width='256' src={process.env.PUBLIC_URL + `${index.name}.png`} />
+                        <Card.Body>
+                          <Card.Title>{index.name}</Card.Title>
+                          <Card.Text>{index.name} currently has {this.state.votes[index.id]} votes.</Card.Text>
+                          {this.renderButton(index.id)}
+                        </Card.Body>
+                  </Card>
+                  </Col>
+                  
+                );
+              })}
+            </Row>
+          </Container>
+        </div>
+      );
+
+
+
+    
   }
 
   handleVoteClick = async(id) => {
     await this.vote(id);
-    await this.getVotes();
+    await this.init();
 
   }
 
   vote = async(id) => {
     console.log("Voted for:" + id);
-    const {contract,accounts} = this.state;
+    const {contract,accounts,hasVoted} = this.state;
     await contract.methods.vote(id).send({from:accounts[0]});
     console.log("Voted for" + id);
     this.setState({contract});
@@ -172,6 +171,14 @@ class App extends Component {
     this.setState({contract,votes});
   }
 
+  checkClientVoted = async() => {
+    const {contract,hasVoted,accounts} = this.state;
+    console.log(accounts[0]);
+    var _hasVoted=await contract.methods.hasVoted().call({from:accounts[0]});
+    console.log("Has Voted: " + _hasVoted);
+    this.setState({hasVoted:_hasVoted});
+    
+  }
 
 }
 

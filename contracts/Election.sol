@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 contract Election {
 
     mapping(uint => Candidate) public candidateList;
-
+    mapping(address => Voter) public voterList;
 
     function addCandidates(string [] memory _names) public {
 
@@ -14,6 +14,9 @@ contract Election {
 
     }
 
+    struct Voter {
+        bool hasVoted;
+    }
 
     struct Candidate {
 
@@ -26,6 +29,13 @@ contract Election {
 
         candidateList[id].nVotes++;
 
+        voterList[msg.sender] = Voter(true);
+
+    }
+
+    function hasVoted () public view returns (bool) {
+        
+        return voterList[msg.sender].hasVoted;
     }
 
 

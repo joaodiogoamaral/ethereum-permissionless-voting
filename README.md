@@ -20,7 +20,7 @@ If there are sufficient funds, then the user can click to vote on his/her favour
 
 3 - Future Enhancements
 
-	- Limit the number of votes per Voter.
+	- Limit the number of votes per Voter. -> DONE!
 	- Release a new version where the DAPP will create addresses and distribute funds for voting, similar to an actual election, where only a limited set of people can vote.
 	
 
